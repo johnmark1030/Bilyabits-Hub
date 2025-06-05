@@ -1,20 +1,10 @@
 const fs = require("fs");
-const login = require("ws3-fca");
+const bilyabits = require("ws3-fca");
 const express = require("express");
 const app = express();
 
-// Load configuration from config.json
 const config = JSON.parse(fs.readFileSync("config.json", "utf8"));
-
-// Load appstate from appstate.json
-let appState = null;
-try {
-    appState = JSON.parse(fs.readFileSync("appstate.json", "utf8"));
-} catch (error) {
-    console.error("Failed to load appstate.json", error);
-}
-
-const port = config.port || 3000;  // Use the port from config.json or default to 3000
+const port = config.port || 3000;
 
 // Load commands from the cmds folder
 const commandFiles = fs.readdirSync('./cmds').filter(file => file.endsWith('.js'));
@@ -34,21 +24,31 @@ commandFiles.forEach(file => {
     commands[command.name] = command;
 });
 
-// Determine login method
-let loginCredentials;
-if (appState && appState.length !== 0) {
-    loginCredentials = {
-        appState: appState
-    };
-} else {
-    console.error("No valid login method found in appstate.json");
+// --- Only use appstate.json for login ---
+let appState = null;
+try {
+    appState = JSON.parse(fs.readFileSync("appstate.json", "utf8"));
+    if (!Array.isArray(appState) || appState.length === 0) {
+        throw new Error("appstate.json is empty or invalid.");
+    }
+} catch (error) {
+    console.error("Failed to load a valid appstate.json:", error);
     process.exit(1);
 }
 
-login(loginCredentials, (err, api) => {
-    if (err) return console.error(err);  // Handle login errors
+bilyabits.login({ appState }, (err, api) => {
+    if (err) return console.error("Login failed:", err);
 
-    // Set the bot's options for its behavior and connection
+    // Save latest appstate.json after successful login
+    if (api.getAppState) {
+        try {
+            fs.writeFileSync("appstate.json", JSON.stringify(api.getAppState(), null, 2), "utf8");
+            console.log("Saved new appstate.json");
+        } catch (e) {
+            console.error("Failed to save appstate.json:", e);
+        }
+    }
+
     api.setOptions({
         forceLogin: true,
         listenEvents: true,
@@ -74,23 +74,24 @@ login(loginCredentials, (err, api) => {
         });
     }
 
-    // Call the function to update bot's bio after login
     updateBotBio(api);
     console.log("[ Bilyabits-Hub ] Refreshing fb_dtsg every 1 hour");
-    
+
     // Notify the user that the bot is online with basic information
-    const adminUserThread = config.adminID; // Admin user thread ID
+    const adminUserThread = config.adminID;
     const botID = api.getCurrentUserID();
     api.sendMessage(`I am online!\nBot Owner Name: ${config.botOwnerName}\nBot ID: ${botID}`, adminUserThread);
 
-    // Function to refresh fb_dtsg every 1 hour
-    const refreshInterval = 60 * 60 * 1000; // 20 minutes in milliseconds
+    // Refresh fb_dtsg every hour
+    const refreshInterval = 60 * 60 * 1000;
     setInterval(() => {
-        api.refreshFb_dtsg(); // Call the refresh function
-        console.log("Refreshed fb_dtsg at:", new Date().toLocaleString()); // Log the event
+        if (api.refreshFb_dtsg) {
+            api.refreshFb_dtsg();
+            console.log("Refreshed fb_dtsg at:", new Date().toLocaleString());
+        }
     }, refreshInterval);
 
-    // Function to handle commands
+    // Handle commands
     function handleCommand(event) {
         const prefix = config.prefix;
         const message = event.body;
@@ -119,18 +120,18 @@ login(loginCredentials, (err, api) => {
         }
     }
 
-    // Start listening for incoming messages and events with detailed logging
+    // Start listening for messages/events
     const stopListening = api.listenMqtt((err, event) => {
-        if (err) return console.error("Error while listening:", err);  // Handle any errors while listening
+        if (err) return console.error("Error while listening:", err);
 
-        console.log("Event received:", event);  // Log all events for debugging
+        console.log("Event received:", event);
 
         switch (event.type) {
             case "message":
                 handleCommand(event);
                 break;
             case "event":
-                console.log("Other event type:", event);  // Log any other event type
+                console.log("Other event type:", event);
                 break;
         }
     });
