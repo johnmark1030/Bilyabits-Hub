@@ -25,10 +25,10 @@ commandFiles.forEach(file => {
 });
 
 // --- Only use appstate.json for login ---
-let appState = null;
+let appStateRaw = null;
 try {
-    appState = JSON.parse(fs.readFileSync("appstate.json", "utf8"));
-    if (!Array.isArray(appState) || appState.length === 0) {
+    appStateRaw = fs.readFileSync("appstate.json", "utf8");
+    if (!appStateRaw || appStateRaw.length === 0) {
         throw new Error("appstate.json is empty or invalid.");
     }
 } catch (error) {
@@ -36,7 +36,7 @@ try {
     process.exit(1);
 }
 
-bilyabits.login({ appState }, (err, api) => {
+bilyabits.login({ appState: appStateRaw }, (err, api) => {
     if (err) return console.error("Login failed:", err);
 
     // Save latest appstate.json after successful login
