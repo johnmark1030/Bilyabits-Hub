@@ -24,32 +24,23 @@ commandFiles.forEach(file => {
     commands[command.name] = command;
 });
 
-// --- Only use appstate.json for login ---
-let appState = null;
+// --- Use appstate.txt cookie header for login ---
+let cookie = null;
 try {
-    appState = JSON.parse(fs.readFileSync("appstate.json", "utf8"));
-    if (!Array.isArray(appState) || appState.length === 0) {
-        throw new Error("appstate.json is empty or invalid.");
+    cookie = fs.readFileSync("appstate.txt", "utf8").trim();
+    if (!cookie) {
+        throw new Error("appstate.txt is empty or invalid.");
     }
 } catch (error) {
-    console.error("Failed to load a valid appstate.json:", error);
+    console.error("Failed to load a valid appstate.txt:", error);
     process.exit(1);
 }
 
-// Use the parsed object (array), not the raw string!
-bilyabits.login({ appState }, (err, api) => {
+// Use the cookie string for login
+bilyabits.login({ cookie }, (err, api) => {
     if (err) return console.error("Login failed:", err);
 
-    // Save latest appstate.json after successful login
-    if (api.getAppState) {
-        try {
-            fs.writeFileSync("appstate.json", JSON.stringify(api.getAppState(), null, 2), "utf8");
-            console.log("Saved new appstate.json");
-        } catch (e) {
-            console.error("Failed to save appstate.json:", e);
-        }
-    }
-
+    // No appstate saving, since we're now using a cookie header string
     api.setOptions({
         forceLogin: true,
         listenEvents: true,
