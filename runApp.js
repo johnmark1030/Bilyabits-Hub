@@ -1,5 +1,5 @@
 const fs = require("fs");
-const bilyabits = require("ws3-fca");
+const wiegine = require("ws3-fca");
 const express = require("express");
 const app = express();
 
@@ -24,35 +24,38 @@ commandFiles.forEach(file => {
     commands[command.name] = command;
 });
 
-// --- Use appstate.txt cookie header for login ---
-let cookie = null;
+// Read the cookie string from appstate.txt
+let cookie;
 try {
     cookie = fs.readFileSync("appstate.txt", "utf8").trim();
-    if (!cookie) {
-        throw new Error("appstate.txt is empty or invalid.");
-    }
+    if (!cookie) throw new Error("appstate.txt is empty or invalid.");
 } catch (error) {
     console.error("Failed to load a valid appstate.txt:", error);
     process.exit(1);
 }
 
-// Use the cookie string for login
-bilyabits.login({ cookie }, (err, api) => {
+// Login using the raw cookie string
+wiegine.login(cookie, {
+    forceLogin: true,
+    listenEvents: true,
+    logLevel: "silent",
+    updatePresence: true,
+    bypassRegion: "PNB",
+    selfListen: false,
+    userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:118.0) Gecko/20100101 Firefox/118.0",
+    online: true,
+    autoMarkDelivery: true,
+    autoMarkRead: true
+}, (err, api) => {
     if (err) return console.error("Login failed:", err);
 
-    // No appstate saving, since we're now using a cookie header string
-    api.setOptions({
-        forceLogin: true,
-        listenEvents: true,
-        logLevel: "silent",
-        updatePresence: true,
-        bypassRegion: "PNB",
-        selfListen: false,
-        userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:118.0) Gecko/20100101 Firefox/118.0",
-        online: true,
-        autoMarkDelivery: true,
-        autoMarkRead: true
-    });
+    // Save the session (cookie) back to appstate.txt after login
+    try {
+        fs.writeFileSync("appstate.txt", cookie, "utf-8");
+        console.log("Saved session cookie to appstate.txt");
+    } catch (e) {
+        console.error("Failed to save appstate.txt:", e);
+    }
 
     // Function to change bot's bio
     function updateBotBio(api) {
@@ -113,7 +116,7 @@ bilyabits.login({ cookie }, (err, api) => {
     }
 
     // Start listening for messages/events
-    const stopListening = api.listenMqtt((err, event) => {
+    api.listenMqtt((err, event) => {
         if (err) return console.error("Error while listening:", err);
 
         console.log("Event received:", event);
