@@ -1,5 +1,5 @@
 {
-  "name": "test-autobot",
+  "name": "Bilyabits-Hub",
   "version": "1.0.0",
   "main": "runApp.js",
   "scripts": {
@@ -8,5 +8,13 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws3-fca": "latest",
+    "axios": "^1.6.8",
+    "fs-extra": "^11.2.0",
+    "npmlog": "^7.0.1",
+    "stream": "^0.0.2"
+  }
 }
