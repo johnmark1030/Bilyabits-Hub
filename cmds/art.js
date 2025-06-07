@@ -1,7 +1,10 @@
 // /cmds/art.js
 const axios = require('axios');
 const fs = require('fs');
+const path = require('path');
 const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+
+const api_key = "b640e04c-2b90-434b-91d7-fdd90650e0bf";
 
 module.exports = {
     name: 'art',
@@ -17,34 +20,33 @@ module.exports = {
         api.sendMessage("Generating your image, please wait...", event.threadID, event.messageID);
 
         try {
-            // Fetch the image from the API
-            const response = await axios.get(`https://ajiro.gleeze.com/api/art?prompt=${encodeURIComponent(prompt)}`, {
-                responseType: 'arraybuffer' // Set response type to arraybuffer to handle binary data
-            });
+            // Call the new API to get the generated image URL
+            const url = `https://kaiz-apis.gleeze.com/api/flux-replicate?prompt=${encodeURIComponent(prompt)}&apikey=${api_key}`;
+            const response = await axios.get(url);
+            
+            // The API response is the image URL
+            const imageUrl = typeof response.data === "string" ? response.data : response.data.image || response.data.url;
 
-            // Check if the response is successful
-            if (response.status === 200) {
-                // Create a buffer from the response data
-                const imageBuffer = Buffer.from(response.data, 'binary');
-
-                // Save the image temporarily
-                const tempFilePath = './temp_image.png';
-                fs.writeFileSync(tempFilePath, imageBuffer);
-
-                // Send the image back to the user
-                api.sendMessage({
-                    body: `Image generated for "${prompt}":`,
-                    attachment: fs.createReadStream(tempFilePath) // Use a readable stream from the saved file
-                }, event.threadID, (err) => {
-                    // Clean up the temporary file after sending
-                    fs.unlinkSync(tempFilePath);
-                    if (err) {
-                        console.error("Error sending the image:", err);
-                    }
-                });
-            } else {
+            if (!imageUrl || !/^https?:\/\//i.test(imageUrl)) {
                 api.sendMessage("Failed to generate the image. Please try again later.", event.threadID, event.messageID);
+                return;
             }
+
+            // Download the generated image
+            const imageResp = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+            const imageBuffer = Buffer.from(imageResp.data, 'binary');
+            const tempFilePath = path.join(__dirname, `temp_art_${Date.now()}.png`);
+            fs.writeFileSync(tempFilePath, imageBuffer);
+
+            api.sendMessage({
+                body: `Image generated for "${prompt}":`,
+                attachment: fs.createReadStream(tempFilePath)
+            }, event.threadID, (err) => {
+                fs.unlinkSync(tempFilePath);
+                if (err) {
+                    console.error("Error sending the image:", err);
+                }
+            });
         } catch (error) {
             console.error("Error fetching image:", error);
             api.sendMessage("There was an error processing your request. Please try again later.", event.threadID, event.messageID);
