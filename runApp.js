@@ -74,7 +74,10 @@ wiegine.login(cookie, {
     // Notify the user that the bot is online with basic information
     const adminUserThread = config.adminID;
     const botID = api.getCurrentUserID();
-    api.sendMessage(`I am online!\nBot Owner Name: ${config.botOwnerName}\nBot ID: ${botID}`, adminUserThread);
+    api.sendMessage(
+        `I am online!\nBot Owner Name: ${config.botOwnerName}\nBot ID: ${botID}`,
+        adminUserThread
+    );
 
     // Refresh fb_dtsg every hour
     const refreshInterval = 60 * 60 * 1000;
@@ -90,7 +93,32 @@ wiegine.login(cookie, {
         const msg = event.body ? event.body.trim() : "";
         // Reply to "Prefix" or "prefix" (case-insensitive)
         if (msg.toLowerCase() === "prefix") {
-            api.sendMessage(`The current prefix is: "${config.prefix}"`,event.messageID, event.threadID);
+            api.sendMessage(
+                `The current prefix is: "${config.prefix}"`,
+                event.threadID,
+                undefined,
+                event.messageID
+            );
+            return true;
+        }
+        // Echo command - built-in
+        if (msg.toLowerCase().startsWith("echo ")) {
+            const echoText = msg.slice(5).trim();
+            if (echoText.length > 0) {
+                api.sendMessage(
+                    echoText,
+                    event.threadID,
+                    undefined,
+                    event.messageID
+                );
+            } else {
+                api.sendMessage(
+                    "Please provide a message to echo.",
+                    event.threadID,
+                    undefined,
+                    event.messageID
+                );
+            }
             return true;
         }
         return false;
@@ -103,7 +131,7 @@ wiegine.login(cookie, {
         // If message is empty, ignore
         if (!message) return;
 
-        // Built-in command: "Prefix" or "prefix"
+        // Built-in commands: "Prefix", "echo", etc
         if (handleBuiltInCommands(api, event)) return;
 
         // Check if message starts with prefix
@@ -112,7 +140,12 @@ wiegine.login(cookie, {
             const commandName = args.shift() ? args.shift().toLowerCase() : "";
 
             if (!commandName) {
-                api.sendMessage("No command input, please type `${config.prefix}help` for available commands.", event.messageID, event.threadID);
+                api.sendMessage(
+                    `No command input, please type "${config.prefix}help" for available commands.`,
+                    event.threadID,
+                    undefined,
+                    event.messageID
+                );
                 return;
             }
 
@@ -122,7 +155,12 @@ wiegine.login(cookie, {
                 usageMsg += `Usage: ${prefix}<command>\n`;
                 usageMsg += `Example: ${prefix}help\n`;
                 usageMsg += `Type "${prefix}help" to see the available commands.`;
-                api.sendMessage(usageMsg, event.messageID, event.threadID);
+                api.sendMessage(
+                    usageMsg,
+                    event.threadID,
+                    undefined,
+                    event.messageID
+                );
                 return;
             }
 
@@ -131,7 +169,12 @@ wiegine.login(cookie, {
                 commands[commandName].execute(api, event, args);
             } catch (error) {
                 console.error(`Error executing command ${commandName}:`, error);
-                api.sendMessage(`There was an error executing the ${commandName} command.`, event.messageID, event.threadID);
+                api.sendMessage(
+                    `There was an error executing the ${commandName} command.`,
+                    event.threadID,
+                    undefined,
+                    event.messageID
+                );
             }
             return;
         }
@@ -147,7 +190,12 @@ wiegine.login(cookie, {
                 commands[msgCommandName].execute(api, event, argsWithoutPrefix);
             } catch (error) {
                 console.error(`Error executing command ${msgCommandName}:`, error);
-                api.sendMessage(`There was an error executing the ${msgCommandName} command.`, event.messageID, event.threadID);
+                api.sendMessage(
+                    `There was an error executing the ${msgCommandName} command.`,
+                    event.threadID,
+                    undefined,
+                    event.messageID
+                );
             }
             return;
         }
@@ -155,8 +203,9 @@ wiegine.login(cookie, {
         // If not a command (with or without prefix), reply to ANY input (gibberish, hello, etc)
         api.sendMessage(
             `🤖 I didn't recognize that input.\nType "${config.prefix}help" to see available commands.`,
-            event.messageID,
-            event.threadID
+            event.threadID,
+            undefined,
+            event.messageID
         );
     }
 
