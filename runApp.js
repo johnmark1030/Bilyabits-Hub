@@ -100,25 +100,28 @@ wiegine.login(cookie, {
         const prefix = config.prefix;
         const message = event.body ? event.body.trim() : "";
 
+        // If message is empty, ignore
+        if (!message) return;
+
         // Built-in command: "Prefix" or "prefix"
         if (handleBuiltInCommands(api, event)) return;
 
-        // Only process commands that start with the prefix
+        // Check if message starts with prefix
         if (message.startsWith(prefix)) {
-            const args = message.slice(prefix.length).split(/ +/);
-            const commandName = args.shift().toLowerCase();
+            const args = message.slice(prefix.length).trim().split(/ +/);
+            const commandName = args.shift() ? args.shift().toLowerCase() : "";
 
             if (!commandName) {
-                api.sendMessage("No command input, please type `/help` for available commands.", event.threadID);
+                api.sendMessage("No command input, please type `${config.prefix}help` for available commands.", event.threadID);
                 return;
             }
 
             if (!commands[commandName]) {
-                // Warning for invalid/gibberish command
+                // Warning for invalid/gibberish command after prefix
                 let usageMsg = "⚠️ Please enter a valid prefix and command name.\n";
                 usageMsg += `Usage: ${prefix}<command>\n`;
                 usageMsg += `Example: ${prefix}help\n`;
-                usageMsg += "Type `/help` to see the available commands.";
+                usageMsg += `Type "${prefix}help" to see the available commands.`;
                 api.sendMessage(usageMsg, event.threadID);
                 return;
             }
@@ -130,7 +133,30 @@ wiegine.login(cookie, {
                 console.error(`Error executing command ${commandName}:`, error);
                 api.sendMessage(`There was an error executing the ${commandName} command.`, event.threadID);
             }
+            return;
         }
+
+        // Now check if the message matches any command name directly without prefix
+        // (e.g. user just types "help" or "stats" or "menu" etc)
+        const splitMessage = message.split(/ +/);
+        const msgCommandName = splitMessage[0].toLowerCase();
+        const argsWithoutPrefix = splitMessage.slice(1);
+
+        if (commands[msgCommandName]) {
+            try {
+                commands[msgCommandName].execute(api, event, argsWithoutPrefix);
+            } catch (error) {
+                console.error(`Error executing command ${msgCommandName}:`, error);
+                api.sendMessage(`There was an error executing the ${msgCommandName} command.`, event.threadID);
+            }
+            return;
+        }
+
+        // If not a command (with or without prefix), reply to ANY input (gibberish, hello, etc)
+        api.sendMessage(
+            `🤖 I didn't recognize that input.\nType "${config.prefix}help" to see available commands.`,
+            event.threadID
+        );
     }
 
     // =============== LISTEN FOR EVENTS ===============
