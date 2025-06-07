@@ -34,7 +34,6 @@ try {
     process.exit(1);
 }
 
-// Login using the raw cookie string
 wiegine.login(cookie, {
     forceLogin: true,
     listenEvents: true,
@@ -86,36 +85,55 @@ wiegine.login(cookie, {
         }
     }, refreshInterval);
 
-    // Handle commands
+    // =============== BUILT-IN AND COMMAND HANDLING ===============
+    function handleBuiltInCommands(api, event) {
+        const msg = event.body ? event.body.trim() : "";
+        // Reply to "Prefix" or "prefix" (case-insensitive)
+        if (msg.toLowerCase() === "prefix") {
+            api.sendMessage(`The current prefix is: "${config.prefix}"`, event.threadID);
+            return true;
+        }
+        return false;
+    }
+
     function handleCommand(event) {
         const prefix = config.prefix;
-        const message = event.body;
+        const message = event.body ? event.body.trim() : "";
 
-        if (!message.startsWith(prefix)) return;
+        // Built-in command: "Prefix" or "prefix"
+        if (handleBuiltInCommands(api, event)) return;
 
-        const args = message.slice(prefix.length).split(/ +/);
-        const commandName = args.shift().toLowerCase();
+        // Only process commands that start with the prefix
+        if (message.startsWith(prefix)) {
+            const args = message.slice(prefix.length).split(/ +/);
+            const commandName = args.shift().toLowerCase();
 
-        if (!commandName) {
-            api.sendMessage("No command input, please type `/help` for available commands.", event.threadID);
-            return;
-        }
+            if (!commandName) {
+                api.sendMessage("No command input, please type `/help` for available commands.", event.threadID);
+                return;
+            }
 
-        if (!commands[commandName]) {
-            api.sendMessage("This command is not available or it is invalid.", event.threadID);
-            return;
-        }
+            if (!commands[commandName]) {
+                // Warning for invalid/gibberish command
+                let usageMsg = "⚠️ Please enter a valid prefix and command name.\n";
+                usageMsg += `Usage: ${prefix}<command>\n`;
+                usageMsg += `Example: ${prefix}help\n`;
+                usageMsg += "Type `/help` to see the available commands.";
+                api.sendMessage(usageMsg, event.threadID);
+                return;
+            }
 
-        // Execute the command
-        try {
-            commands[commandName].execute(api, event, args);
-        } catch (error) {
-            console.error(`Error executing command ${commandName}:`, error);
-            api.sendMessage(`There was an error executing the ${commandName} command.`, event.threadID);
+            // Execute the command
+            try {
+                commands[commandName].execute(api, event, args);
+            } catch (error) {
+                console.error(`Error executing command ${commandName}:`, error);
+                api.sendMessage(`There was an error executing the ${commandName} command.`, event.threadID);
+            }
         }
     }
 
-    // Start listening for messages/events
+    // =============== LISTEN FOR EVENTS ===============
     api.listenMqtt((err, event) => {
         if (err) return console.error("Error while listening:", err);
 
