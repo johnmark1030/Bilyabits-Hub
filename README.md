@@ -34,8 +34,8 @@ Bilyabits-Hub is a facebook chat bot automated with various commands to help you
    cd Bilyabits-Hub
    ```
 
-2. **Config.json Settings:**
-   Setup your account, prefix, and port on `config.json`
+2. **Configuration Settings:**
+   Setup your account, prefix, and port on `config.json` also paste ur cookie header string in `appstate.txt`
 
 3. **Root Directory:**
    ```
