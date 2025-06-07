@@ -22,11 +22,11 @@ module.exports = {
 
         try {
             const response = await axios.get(url);
-            if (response.data && response.data.success) {
-                api.sendMessage(`{}=====GPT4o====={}\n\n${response.data.response}`, event.threadID, event.messageID);
-            } else if (response.data && response.data.response) {
+            if (response.data && response.data.answer) {
+                api.sendMessage(`{}=====GPT4o====={}\n\n${response.data.answer}`, event.threadID, event.messageID);
+            } else if (response.data && response.data.answer) {
                 // If success property missing but API returned response
-                api.sendMessage(`{}=====GPT4o====={}\n\n${response.data.response}`, event.threadID, event.messageID);
+                api.sendMessage(`{}=====GPT4o====={}\n\n${response.data.answer}`, event.threadID, event.messageID);
             } else {
                 api.sendMessage("There was an error processing your request. Please try again later.", event.threadID, event.messageID);
             }
