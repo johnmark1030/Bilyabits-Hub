@@ -91,6 +91,7 @@ wiegine.login(cookie, {
     // =============== BUILT-IN AND COMMAND HANDLING ===============
     function handleBuiltInCommands(api, event) {
         const msg = event.body ? event.body.trim() : "";
+
         // Reply to "Prefix" or "prefix" (case-insensitive)
         if (msg.toLowerCase() === "prefix") {
             api.sendMessage(
@@ -99,26 +100,6 @@ wiegine.login(cookie, {
                 undefined,
                 event.messageID
             );
-            return true;
-        }
-        // Echo command - built-in
-        if (msg.toLowerCase().startsWith("echo ")) {
-            const echoText = msg.slice(5).trim();
-            if (echoText.length > 0) {
-                api.sendMessage(
-                    echoText,
-                    event.threadID,
-                    undefined,
-                    event.messageID
-                );
-            } else {
-                api.sendMessage(
-                    "Please provide a message to echo.",
-                    event.threadID,
-                    undefined,
-                    event.messageID
-                );
-            }
             return true;
         }
         return false;
@@ -131,13 +112,14 @@ wiegine.login(cookie, {
         // If message is empty, ignore
         if (!message) return;
 
-        // Built-in commands: "Prefix", "echo", etc
+        // Built-in commands: "Prefix"
         if (handleBuiltInCommands(api, event)) return;
 
-        // Check if message starts with prefix
+        // If message starts with prefix, process command
         if (message.startsWith(prefix)) {
             const args = message.slice(prefix.length).trim().split(/ +/);
-            const commandName = args.shift() ? args.shift().toLowerCase() : "";
+            const commandNameRaw = args.shift();
+            const commandName = commandNameRaw ? commandNameRaw.toLowerCase() : "";
 
             if (!commandName) {
                 api.sendMessage(
@@ -150,8 +132,7 @@ wiegine.login(cookie, {
             }
 
             if (!commands[commandName]) {
-                // Warning for invalid/gibberish command after prefix
-                let usageMsg = "⚠️ Please enter a valid prefix and command name.\n";
+                let usageMsg = "⚠️ Invalid command.\n";
                 usageMsg += `Usage: ${prefix}<command>\n`;
                 usageMsg += `Example: ${prefix}help\n`;
                 usageMsg += `Type "${prefix}help" to see the available commands.`;
@@ -179,30 +160,23 @@ wiegine.login(cookie, {
             return;
         }
 
-        // Now check if the message matches any command name directly without prefix
-        // (e.g. user just types "help" or "stats" or "menu" etc)
+        // If message does NOT start with prefix but matches a command name, warn the user to use the prefix
         const splitMessage = message.split(/ +/);
         const msgCommandName = splitMessage[0].toLowerCase();
-        const argsWithoutPrefix = splitMessage.slice(1);
 
         if (commands[msgCommandName]) {
-            try {
-                commands[msgCommandName].execute(api, event, argsWithoutPrefix);
-            } catch (error) {
-                console.error(`Error executing command ${msgCommandName}:`, error);
-                api.sendMessage(
-                    `There was an error executing the ${msgCommandName} command.`,
-                    event.threadID,
-                    undefined,
-                    event.messageID
-                );
-            }
+            api.sendMessage(
+                `⚠️ Please use the prefix "${config.prefix}" before the command.\nExample: ${config.prefix}${msgCommandName}`,
+                event.threadID,
+                undefined,
+                event.messageID
+            );
             return;
         }
 
-        // If not a command (with or without prefix), reply to ANY input (gibberish, hello, etc)
+        // For any other (gibberish) input, show a warning about invalid input and remind to use prefix
         api.sendMessage(
-            `🤖 I didn't recognize that input.\nType "${config.prefix}help" to see available commands.`,
+            `🤖 Unrecognized input.\nAlways use the prefix "${config.prefix}" before commands.\nType "${config.prefix}help" to see available commands.`,
             event.threadID,
             undefined,
             event.messageID
