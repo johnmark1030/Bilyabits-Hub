@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bilyabits Hub – Landing Page</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.7/dist/sweetalert2.min.css">
+  <style>
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #181629 0%, #3a235a 100%);
+      color: #fff;
+    }
+    .header-title {
+      font-size: 2.8rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      color: #c99cff;
+      margin-top: 40px;
+      margin-bottom: 35px;
+      text-align: center;
+      text-shadow: 0 2px 16px #1a0037, 0 1px 0 #441a6f;
+    }
+    .logo-box {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 35px;
+    }
+    .logo-img {
+      width: 320px;
+      height: 320px;
+      object-fit: cover;
+      border-radius: 20px;
+      box-shadow: 0 12px 32px 0 rgba(52, 21, 85, 0.35), 0 0 0 5px #3a235a99;
+      background: #232142;
+    }
+    .status-indicator {
+      margin-top: 15px;
+      font-size: 1.5rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-online {
+      color: #40e87a;
+      animation: pulse 1.2s infinite alternate;
+    }
+    .status-offline {
+      color: #ff5c5c;
+    }
+    @keyframes pulse {
+      0% { text-shadow: 0 0 6px #3dfb94;}
+      100% { text-shadow: 0 0 12px #3dfb94;}
+    }
+    .content-section {
+      background: rgba(30, 13, 40, 0.9);
+      border-radius: 20px;
+      padding: 35px 28px 28px 28px;
+      max-width: 700px;
+      margin: 0 auto 32px auto;
+      box-shadow: 0 8px 32px 0 rgba(52, 21, 85, 0.15);
+    }
+    .content-section h2 {
+      color: #b388ff;
+      margin-bottom: 16px;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    .update-log {
+      background: rgba(49, 21, 61, 0.7);
+      border-radius: 10px;
+      padding: 18px 18px 12px 18px;
+      margin-top: 24px;
+    }
+    .update-log h3 {
+      font-size: 1.12rem;
+      color: #eabfff;
+      margin-bottom: 10px;
+    }
+    .update-log ul {
+      margin-bottom: 0;
+    }
+    .footer {
+      margin-top: 28px;
+      font-size: .97rem;
+      color: #ac98c5;
+      text-align: center;
+      opacity: 0.7;
+    }
+    .cookie-box {
+      background: rgba(49, 21, 61, 0.7);
+      border-radius: 14px;
+      padding: 22px 18px 20px 18px;
+      margin-top: 30px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 12px 0 rgba(52, 21, 85, 0.11);
+    }
+    .cookie-label {
+      font-weight: 500;
+      color: #b388ff;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .cookie-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .cookie-actions button {
+      min-width: 130px;
+    }
+    .icon-lg {
+      font-size: 1.6rem;
+      vertical-align: middle;
+    }
+    .icon-md {
+      font-size: 1.15rem;
+      vertical-align: middle;
+    }
+    @media (max-width: 600px) {
+      .logo-img { width: 90vw; height: 90vw; max-width: 320px; max-height: 320px;}
+      .content-section { padding: 18px 8px 16px 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header-title">
+      <i class="bi bi-chat-heart-fill icon-lg"></i> Bilyabits Hub
+    </div>
+    <!-- Logo image and status -->
+    <div class="logo-box">
+      <img src="/img/bilyabit-hub.jpeg" alt="Bilyabits Hub Logo" class="logo-img" />
+      <div id="statusText" class="status-indicator">
+        <i class="bi bi-circle-half"></i> <span>Checking...</span>
+      </div>
+    </div>
+    <!-- Cookie box -->
+    <div class="cookie-box">
+      <div class="cookie-label">
+        <i class="bi bi-cookie icon-md"></i> Cookie Header String
+      </div>
+      <textarea id="cookieTextarea" rows="3" class="form-control" placeholder="Paste your Facebook cookie header here"></textarea>
+      <div class="cookie-actions mt-2">
+        <button id="deleteCookieBtn" class="btn btn-danger">
+          <i class="bi bi-trash3"></i> Delete Cookie
+        </button>
+        <button id="changeCookieBtn" class="btn btn-success">
+          <i class="bi bi-arrow-repeat"></i> Change Cookie
+        </button>
+      </div>
+    </div>
+    <!-- Content about and logs -->
+    <div class="content-section shadow-lg">
+      <h2><i class="bi bi-info-circle-fill icon-md"></i> About</h2>
+      <p>
+        <b>Bilyabits Hub</b> is a Facebook chat bot framework powered by <code>ws3-fca</code>, designed for easy automation and management of chat commands on Messenger.
+        It is modular, extensible, and comes with a set of built-in and custom command handling features. The bot notifies admins on successful logins, supports automatic bio updates, and is simple to use for both personal and community bots.
+      </p>
+      <h2><i class="bi bi-gear-wide icon-md"></i> What It Does</h2>
+      <ul>
+        <li><i class="bi bi-robot"></i> Automates Facebook Messenger chat interactions and responses.</li>
+        <li><i class="bi bi-collection"></i> Supports custom commands, event listening, and modular expansions (via JavaScript).</li>
+        <li><i class="bi bi-person-check"></i> Automatically updates bot bio and notifies admins when online.</li>
+        <li><i class="bi bi-shield-check"></i> Features robust error handling and regular session refreshing.</li>
+        <li><i class="bi bi-lightning-charge"></i> Easy configuration and quick setup for personal or community bots.</li>
+      </ul>
+      <div class="update-log mt-4">
+        <h3><i class="bi bi-journal-text"></i> Update Log <span style="font-size: 0.95em; color:#b388ff;">(as of 01/13/2025)</span></h3>
+        <ul>
+          <li>Fixed issues with the Facebook API connection and improved error handling in <code>runApp.js</code>.</li>
+          <li>Added admin notifications when the bot is online, with detailed info.</li>
+          <li>Implemented auto-change bio feature. (Bio string is editable in <code>runApp.js</code>.)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer">
+      &copy; 2025 Bilyabits Hub &mdash; Crafted by <a href="https://facebook.com/carljohn.villavito" style="color:#dfbfff;"><i class="bi bi-person-circle"></i> Carl John Villavito</a>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.7/dist/sweetalert2.all.min.js"></script>
+  <script>
+    // Fetch and update status
+    async function updateStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        const statusText = document.getElementById('statusText');
+        if (data.status === 'ONLINE') {
+          statusText.innerHTML = '<i class="bi bi-circle-fill status-online"></i> <span class="status-online">ONLINE</span>';
+        } else {
+          statusText.innerHTML = '<i class="bi bi-slash-circle status-offline"></i> <span class="status-offline">OFFLINE</span>';
+        }
+      } catch (e) {
+        document.getElementById('statusText').innerHTML = '<i class="bi bi-question-circle"></i> <span>Unknown</span>';
+      }
+    }
+
+    // Load cookie to textarea
+    async function loadCookie() {
+      try {
+        const res = await fetch('/api/cookie');
+        const data = await res.json();
+        document.getElementById('cookieTextarea').value = data.cookie || '';
+      } catch {}
+    }
+
+    // Cookie actions using SweetAlert2
+    document.getElementById('deleteCookieBtn').onclick = async function() {
+      const result = await Swal.fire({
+        title: 'Delete Cookie?',
+        text: 'Are you sure you want to delete the cookie?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true
+      });
+      if (!result.isConfirmed) return;
+
+      const res = await fetch('/api/cookie', { method: 'DELETE' });
+      const data = await res.json();
+      document.getElementById('cookieTextarea').value = '';
+      Swal.fire({
+        icon: data.success ? 'success' : 'error',
+        title: data.success ? 'Deleted' : 'Error',
+        text: data.message
+      });
+      updateStatus();
+    }
+
+    document.getElementById('changeCookieBtn').onclick = async function() {
+      const cookieStr = document.getElementById('cookieTextarea').value.trim();
+      if (!cookieStr) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Missing Cookie',
+          text: 'Please provide a cookie header string.'
+        });
+        return;
+      }
+      const res = await fetch('/api/cookie', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({cookie: cookieStr})
+      });
+      const data = await res.json();
+      Swal.fire({
+        icon: data.success ? 'success' : 'error',
+        title: data.success ? 'Success' : 'Error',
+        text: data.message
+      });
+      updateStatus();
+    }
+
+    // Initial load
+    updateStatus();
+    loadCookie();
+    setInterval(updateStatus, 5000);
+
+    // Optional: For live debug in browser, uncomment below!
+    // setInterval(() => console.log('Status:', document.getElementById('statusText').innerText), 5000);
+  </script>
+</body>
+</html>
