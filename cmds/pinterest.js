@@ -19,48 +19,65 @@ module.exports = {
         api.sendMessage("Fetching image(s), please wait...", event.threadID, event.messageID);
 
         try {
-            // Fetch images from the new Pinterest API
+            // Fetch images from the Pinterest API
             const url = `https://kaiz-apis.gleeze.com/api/pinterest?search=${encodeURIComponent(prompt)}&apikey=${api_key}`;
-            const response = await axios.get(url);
+            const response = await axios.get(url, { timeout: 15000 }); // 15s timeout
 
-            // Check if the response is successful and has data
             if (response.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
                 const images = response.data.data;
-
-                // Prepare to send images
                 const imagePaths = [];
 
                 for (const imageUrl of images) {
-                    // Download each image
-                    const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-                    const imageBuffer = Buffer.from(imageResponse.data, 'binary');
+                    try {
+                        const imageResponse = await axios.get(imageUrl, { 
+                            responseType: 'arraybuffer',
+                            timeout: 10000 // 10s timeout per image
+                        });
+                        const imageBuffer = Buffer.from(imageResponse.data, 'binary');
 
-                    // Create a temporary file path
-                    const tempFilePath = path.join(__dirname, `temp_image_${Date.now()}_${Math.random().toString(36).substr(2, 5)}.jpg`);
-                    fs.writeFileSync(tempFilePath, imageBuffer);
-                    imagePaths.push(tempFilePath);
+                        const tempFilePath = path.join(__dirname, `temp_image_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`);
+                        fs.writeFileSync(tempFilePath, imageBuffer);
+                        imagePaths.push(tempFilePath);
+                    } catch (err) {
+                        console.error(`Failed to download image: ${imageUrl}`, err.message || err);
+                        // Continue to next image
+                    }
+                }
+
+                if (imagePaths.length === 0) {
+                    api.sendMessage("Failed to download any images. The source may be unreachable or blocked from this server.", event.threadID, event.messageID);
+                    return;
                 }
 
                 // Send all images back to the user in one message
                 const attachments = imagePaths.map(imagePath => fs.createReadStream(imagePath));
 
-                // Send the message with attachments
                 api.sendMessage({
                     body: `Here are the images for "${prompt}":`,
-                    attachment: attachments // Send all images as attachments
+                    attachment: attachments
                 }, event.threadID, (err) => {
-                    // Clean up the temporary files after sending
-                    imagePaths.forEach(imagePath => fs.unlinkSync(imagePath));
+                    // Clean up temp files
+                    imagePaths.forEach(imagePath => {
+                        fs.unlink(imagePath, (e) => {
+                            if (e) console.error("Failed to remove temp image:", imagePath, e.message || e);
+                        });
+                    });
                     if (err) {
-                        console.error("Error sending the images:", err);
+                        console.error("Error sending the images:", err.message || err);
+                        api.sendMessage("Error sending the images. Please try again later.", event.threadID);
                     }
                 });
+
             } else {
                 api.sendMessage("No images found for the given prompt.", event.threadID, event.messageID);
             }
         } catch (error) {
-            console.error("Error fetching images:", error);
-            api.sendMessage("There was an error processing your request. Please try again later.", event.threadID, event.messageID);
+            if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || error.message?.includes('timeout')) {
+                api.sendMessage("The request timed out. The source API or image server may be slow or unreachable from this server.", event.threadID, event.messageID);
+            } else {
+                console.error("Error fetching images:", error);
+                api.sendMessage("There was an error processing your request. Please try again later.", event.threadID, event.messageID);
+            }
         }
     }
 };
